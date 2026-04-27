@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Target liste — Proel Automatizacija</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; min-height: 100vh; padding: 2rem 1rem; }
+.wrapper { max-width: 720px; margin: 0 auto; }
+
+/* ── HEADER ── */
+.header-card {
+  background: #fff; border: 0.5px solid #dddbd2; border-radius: 16px;
+  padding: 2rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 1.5rem;
+}
+.header-logo {
+  flex-shrink: 0; width: 80px; height: 80px; border-radius: 12px;
+  object-fit: contain; border: 0.5px solid #dddbd2; background: #f5f4f0; padding: 6px;
+}
+.header-text h1 { font-size: 22px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+.header-text p { font-size: 13px; color: #888; }
+
+/* ── NAV TABS ── */
+.tabs { display: flex; gap: 8px; margin-bottom: 1rem; }
+.tab-btn {
+  flex: 1; padding: 11px 16px; border: 0.5px solid #dddbd2; border-radius: 12px;
+  background: #fff; font-size: 13px; font-weight: 500; color: #666;
+  cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 7px;
+}
+.tab-btn:hover { background: #f9f8f5; }
+.tab-btn.active { background: #1D9E75; border-color: #1D9E75; color: #fff; font-weight: 600; }
+.tab-icon { font-size: 16px; }
+
+/* ── VIEWS ── */
+.view { display: none; }
+.view.active { display: block; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── PROGRESS ── */
+.progress-wrap { margin: 1rem 0 0.25rem; }
+.progress-bar-bg { background: #eee; border-radius: 99px; height: 8px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: #1D9E75; border-radius: 99px; transition: width 0.4s ease; width: 0%; }
+.progress-label { font-size: 12px; color: #888; margin-top: 4px; }
+.tab-header { background: #fff; border: 0.5px solid #dddbd2; border-radius: 14px; padding: 1.25rem 1.5rem; margin-bottom: 10px; }
+.tab-header h2 { font-size: 15px; font-weight: 600; color: #1a1a1a; margin-bottom: 3px; }
+.tab-header p { font-size: 12px; color: #888; }
+
+/* ── SECTIONS ── */
+.section { background: #fff; border: 0.5px solid #dddbd2; border-radius: 14px; margin-bottom: 10px; overflow: hidden; }
+.section-header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; user-select: none; transition: background 0.15s; }
+.section-header:hover { background: #f9f8f5; }
+.section-header.open { border-bottom: 0.5px solid #dddbd2; }
+.section-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.section-title { font-size: 14px; font-weight: 600; color: #1a1a1a; flex: 1; }
+.section-meta { display: flex; align-items: center; gap: 8px; }
+.mini-progress { height: 3px; width: 60px; background: #eee; border-radius: 99px; overflow: hidden; }
+.mini-fill { height: 100%; background: #1D9E75; border-radius: 99px; transition: width 0.3s; }
+.sec-count { font-size: 12px; color: #888; }
+.chevron { font-size: 11px; color: #bbb; transition: transform 0.2s; }
+.chevron.open { transform: rotate(90deg); }
+.items { display: none; padding: 6px 12px 12px; }
+.items.open { display: block; }
+.item { display: flex; align-items: flex-start; gap: 10px; padding: 7px 6px; border-radius: 8px; cursor: pointer; transition: background 0.1s; }
+.item:hover { background: #f9f8f5; }
+.checkbox { width: 18px; height: 18px; border: 1.5px solid #ccc; border-radius: 4px; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.checkbox.checked { background: #1D9E75; border-color: #1D9E75; }
+.checkmark { color: #fff; font-size: 11px; font-weight: 700; display: none; }
+.checkbox.checked .checkmark { display: block; }
+.item-text { font-size: 13px; color: #222; line-height: 1.45; }
+.item-text.checked { text-decoration: line-through; color: #aaa; }
+.badge { display: inline-block; font-size: 10px; padding: 1px 7px; border-radius: 99px; margin-left: 6px; font-weight: 600; vertical-align: middle; }
+.badge-high { background: #FCEBEB; color: #A32D2D; }
+.badge-med { background: #FAEEDA; color: #854F0B; }
+
+/* ── ACTION ROW ── */
+.action-row { display: flex; gap: 8px; margin-top: 1rem; }
+.send-btn { flex: 1; padding: 12px; background: #fff; color: #1D9E75; font-size: 14px; font-weight: 600; border: 1.5px solid #1D9E75; border-radius: 12px; cursor: pointer; transition: all 0.15s; }
+.send-btn:hover { background: #f0faf6; }
+.quiz-btn { flex: 2; padding: 12px; background: #1D9E75; color: #fff; font-size: 14px; font-weight: 600; border: none; border-radius: 12px; cursor: pointer; transition: background 0.15s; }
+.quiz-btn:hover { background: #178a63; }
+.quiz-btn:disabled { background: #bbb; cursor: not-allowed; }
+
+/* ── MODAL ── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: #fff; border-radius: 16px; padding: 2rem; width: 90%; max-width: 420px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
+.modal h2 { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+.modal p { font-size: 13px; color: #888; margin-bottom: 1.25rem; }
+.modal label { font-size: 13px; font-weight: 500; color: #444; display: block; margin-bottom: 5px; }
+.modal input { width: 100%; padding: 9px 12px; border: 1px solid #dddbd2; border-radius: 8px; font-size: 14px; margin-bottom: 1rem; outline: none; transition: border 0.15s; }
+.modal input:focus { border-color: #1D9E75; }
+.modal-actions { display: flex; gap: 8px; }
+.btn-cancel { flex: 1; padding: 10px; border: 1px solid #dddbd2; background: #fff; border-radius: 8px; font-size: 13px; cursor: pointer; color: #555; }
+.btn-send { flex: 2; padding: 10px; background: #1D9E75; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.btn-send:hover { background: #178a63; }
+
+/* ══════════════════════════════════
+   QUIZ VIEW
+══════════════════════════════════ */
+#view-quiz { padding-bottom: 2rem; }
+
+.quiz-loading { background: #fff; border: 0.5px solid #dddbd2; border-radius: 16px; padding: 3rem 2rem; text-align: center; }
+.quiz-loading .spinner { width: 40px; height: 40px; border: 3px solid #eee; border-top-color: #1D9E75; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1.25rem; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.quiz-loading h2 { font-size: 17px; font-weight: 600; color: #1a1a1a; margin-bottom: 6px; }
+.quiz-loading p { font-size: 13px; color: #888; }
+.gen-progress { font-size: 12px; color: #1D9E75; margin-top: 8px; font-weight: 500; }
+
+/* top bar */
+.quiz-topbar { background: #fff; border: 0.5px solid #dddbd2; border-radius: 14px; padding: 1rem 1.25rem; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; }
+.quiz-counter { font-size: 13px; color: #888; flex: 1; }
+.quiz-score-live { font-size: 13px; font-weight: 600; color: #1D9E75; }
+
+/* timer */
+.timer-wrap { position: relative; width: 44px; height: 44px; flex-shrink: 0; }
+.timer-svg { transform: rotate(-90deg); }
+.timer-bg { fill: none; stroke: #eee; stroke-width: 4; }
+.timer-ring { fill: none; stroke: #1D9E75; stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 1s linear, stroke 0.3s; stroke-dasharray: 113; stroke-dashoffset: 0; }
+.timer-ring.urgent { stroke: #E05A5A; }
+.timer-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #1a1a1a; }
+
+/* question card */
+.quiz-card { background: #fff; border: 0.5px solid #dddbd2; border-radius: 16px; padding: 1.5rem; margin-bottom: 12px; }
+.quiz-topic { font-size: 11px; font-weight: 600; color: #1D9E75; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.quiz-question { font-size: 15px; font-weight: 600; color: #1a1a1a; line-height: 1.5; margin-bottom: 1.25rem; }
+.quiz-options { display: flex; flex-direction: column; gap: 8px; }
+.quiz-option { display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border: 1.5px solid #dddbd2; border-radius: 10px; cursor: pointer; transition: all 0.15s; background: #fff; font-size: 13px; color: #222; line-height: 1.4; text-align: left; width: 100%; }
+.quiz-option:hover:not(.locked) { border-color: #1D9E75; background: #f0faf6; }
+.opt-letter { width: 22px; height: 22px; border-radius: 6px; background: #f5f4f0; font-size: 11px; font-weight: 700; color: #888; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.quiz-option.selected { border-color: #1D9E75; background: #f0faf6; }
+.quiz-option.selected .opt-letter { background: #1D9E75; color: #fff; }
+.quiz-option.correct { border-color: #1D9E75; background: #e6f7f0; }
+.quiz-option.correct .opt-letter { background: #1D9E75; color: #fff; }
+.quiz-option.wrong { border-color: #E05A5A; background: #fdf0f0; }
+.quiz-option.wrong .opt-letter { background: #E05A5A; color: #fff; }
+.quiz-option.reveal-correct { border-color: #1D9E75; background: #e6f7f0; opacity: 0.75; }
+.quiz-option.locked { cursor: default; }
+
+.quiz-explanation { margin-top: 12px; padding: 12px 14px; background: #f5f4f0; border-radius: 10px; font-size: 13px; color: #444; line-height: 1.5; display: none; }
+.quiz-explanation.show { display: block; }
+.quiz-explanation strong { color: #1a1a1a; }
+
+.quiz-next { width: 100%; padding: 13px; background: #1D9E75; color: #fff; font-size: 14px; font-weight: 600; border: none; border-radius: 12px; cursor: pointer; transition: background 0.15s; display: none; }
+.quiz-next.show { display: block; }
+.quiz-next:hover { background: #178a63; }
+
+/* results */
+.quiz-results { background: #fff; border: 0.5px solid #dddbd2; border-radius: 16px; padding: 2rem; }
+.results-score { text-align: center; padding: 1.5rem 0 1rem; }
+.score-ring-wrap { position: relative; width: 100px; height: 100px; margin: 0 auto 1rem; }
+.score-ring-svg { transform: rotate(-90deg); }
+.score-ring-bg { fill: none; stroke: #eee; stroke-width: 8; }
+.score-ring-fill { fill: none; stroke: #1D9E75; stroke-width: 8; stroke-linecap: round; stroke-dasharray: 251; stroke-dashoffset: 251; transition: stroke-dashoffset 1s ease; }
+.score-ring-fill.fail { stroke: #E05A5A; }
+.score-number { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.score-pct { font-size: 26px; font-weight: 700; color: #1a1a1a; }
+.score-sub { font-size: 11px; color: #888; }
+.results-title { font-size: 18px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
+.results-sub { font-size: 13px; color: #888; margin-bottom: 1.5rem; }
+
+.breakdown { margin-bottom: 1.5rem; }
+.breakdown-title { font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.breakdown-row { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; }
+.breakdown-label { font-size: 12px; color: #444; width: 180px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.breakdown-bar-bg { flex: 1; height: 6px; background: #eee; border-radius: 99px; overflow: hidden; }
+.breakdown-bar-fill { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
+.breakdown-count { font-size: 11px; color: #888; width: 32px; text-align: right; flex-shrink: 0; }
+
+.results-actions { display: flex; gap: 8px; }
+.btn-retry { flex: 1; padding: 12px; background: #fff; color: #1D9E75; font-size: 14px; font-weight: 600; border: 1.5px solid #1D9E75; border-radius: 12px; cursor: pointer; }
+.btn-back { flex: 1; padding: 12px; background: #1D9E75; color: #fff; font-size: 14px; font-weight: 600; border: none; border-radius: 12px; cursor: pointer; }
+.btn-back:hover { background: #178a63; }
+
+@keyframes flashRed { 0%,100%{background:#f5f4f0} 50%{background:#fdf0f0} }
+.timeout-flash { animation: flashRed 0.4s ease; }
+
+@media (max-width: 500px) {
+  .header-card { flex-direction: column; align-items: flex-start; }
+  .tab-btn { font-size: 12px; padding: 10px 8px; }
+  .breakdown-label { width: 120px; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div class="header-card">
+    <img class="header-logo"
+      src="https://www.proel-automatizacija.com/wp-content/uploads/2020/02/proel-automatizacija-logo.png"
+      alt="Logo" onerror="this.style.display='none'" />
+    <div class="header-text">
+      <h1>Target liste</h1>
+      <p>Temeljno znanje potrebno za samostalan rad na projektima</p>
+    </div>
+  </div>
+
+  <div class="tabs" id="main-tabs">
+    <button class="tab-btn active" onclick="switchMainTab('automatizacija', this)">
+      <span class="tab-icon">🖥️</span> Inženjer automatizacije
+    </button>
+    <button class="tab-btn" onclick="switchMainTab('konstruktor', this)">
+      <span class="tab-icon">📐</span> Strojarski konstruktor
+    </button>
+  </div>
+
+  <!-- ════ CHECKLIST VIEW ════ -->
+  <div class="view active" id="view-checklist">
+
+    <div class="tab-panel active" id="panel-automatizacija">
+      <div class="tab-header">
+        <h2>Inženjer automatizacije</h2>
+        <p>Temeljno znanje potrebno za samostalan rad na projektima automatizacije</p>
+        <div class="progress-wrap">
+          <div class="progress-bar-bg"><div class="progress-bar-fill" id="main-bar-automatizacija"></div></div>
+          <div class="progress-label" id="main-label-automatizacija">0 / 0 završeno</div>
+        </div>
+      </div>
+      <div id="sections-automatizacija"></div>
+      <div class="action-row">
+        <button class="send-btn" onclick="openModal('automatizacija')">📧 Pošalji</button>
+        <button class="quiz-btn" id="quiz-btn-automatizacija" onclick="startQuiz('automatizacija')" disabled>🎯 Pokreni kviz</button>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="panel-konstruktor">
+      <div class="tab-header">
+        <h2>Strojarski konstruktor</h2>
+        <p>Temeljno znanje potrebno za samostalan rad na projektima strojarske konstrukcije</p>
+        <div class="progress-wrap">
+          <div class="progress-bar-bg"><div class="progress-bar-fill" id="main-bar-konstruktor"></div></div>
+          <div class="progress-label" id="main-label-konstruktor">0 / 0 završeno</div>
+        </div>
+      </div>
+      <div id="sections-konstruktor"></div>
+      <div class="action-row">
+        <button class="send-btn" onclick="openModal('konstruktor')">📧 Pošalji</button>
+        <button class="quiz-btn" id="quiz-btn-konstruktor" onclick="startQuiz('konstruktor')" disabled>🎯 Pokreni kviz</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ════ QUIZ VIEW ════ -->
+  <div class="view" id="view-quiz">
+
+    <div id="quiz-loading" class="quiz-loading">
+      <div class="spinner"></div>
+      <h2>Generiranje pitanja…</h2>
+      <p>Claude priprema pitanja na temelju tvog znanja</p>
+      <div class="gen-progress" id="gen-progress">0 / 0 pitanja</div>
+    </div>
+
+    <div id="quiz-active" style="display:none">
+      <div class="quiz-topbar">
+        <div class="quiz-counter" id="quiz-counter">Pitanje 1 / 1</div>
+        <div class="quiz-score-live" id="quiz-score-live">0 točnih</div>
+        <div class="timer-wrap">
+          <svg class="timer-svg" width="44" height="44" viewBox="0 0 44 44">
+            <circle class="timer-bg" cx="22" cy="22" r="18"/>
+            <circle class="timer-ring" id="timer-ring" cx="22" cy="22" r="18"/>
+          </svg>
+          <div class="timer-text" id="timer-text">15</div>
+        </div>
+      </div>
+      <div class="quiz-card">
+        <div class="quiz-topic" id="quiz-topic"></div>
+        <div class="quiz-question" id="quiz-question"></div>
+        <div class="quiz-options" id="quiz-options"></div>
+        <div class="quiz-explanation" id="quiz-explanation"></div>
+      </div>
+      <button class="quiz-next" id="quiz-next" onclick="nextQuestion()">Sljedeće pitanje →</button>
+    </div>
+
+    <div id="quiz-results" class="quiz-results" style="display:none">
+      <div class="results-score">
+        <div class="score-ring-wrap">
+          <svg class="score-ring-svg" width="100" height="100" viewBox="0 0 100 100">
+            <circle class="score-ring-bg" cx="50" cy="50" r="40"/>
+            <circle class="score-ring-fill" id="score-ring-fill" cx="50" cy="50" r="40"/>
+          </svg>
+          <div class="score-number">
+            <span class="score-pct" id="score-pct">0%</span>
+            <span class="score-sub" id="score-fraction">0/0</span>
+          </div>
+        </div>
+        <div class="results-title" id="results-title">Rezultat</div>
+        <div class="results-sub" id="results-sub"></div>
+      </div>
+      <div class="breakdown" id="breakdown"></div>
+      <div class="results-actions">
+        <button class="btn-retry" onclick="retryQuiz()">🔄 Ponovi kviz</button>
+        <button class="btn-back" onclick="backToChecklist()">← Povratak na listu</button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- EMAIL MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h2>Pošalji rezultate</h2>
+    <p>Unesi email adresu na koju želiš poslati pregled ispunjene checkliste.</p>
+    <label for="email-input">Email adresa</label>
+    <input type="email" id="email-input" placeholder="npr. voditelj@tvrtka.com" />
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Odustani</button>
+      <button class="btn-send" onclick="doSendEmail()">Otvori email klijent</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══ DATA ═══ */
+const datasets = {
+  automatizacija: {
+    storageKey: 'automatizacija-checklist-v1',
+    label: 'Target lista — inženjer automatizacije',
+    sections: [
+      { id:"elektro", icon:"⚡", color:"#FAEEDA", title:"Elektrotehnika — osnove", items:[
+        {text:"Čitanje električne sheme (IEC simboli, oznake, numeracija vodova)", p:"high"},
+        {text:"Razlika između NO i NC kontakta", p:"high"},
+        {text:"Relejni moduli — prepoznavanje, spajanje, testiranje", p:"high"},
+        {text:"Sklopnici, termička zaštita, osigurači", p:"high"},
+        {text:"24VDC logički krug vs. 230/400VAC napajanje", p:"high"},
+        {text:"Mjerenje napona, struje i otpora multimetrom, provjera kontinuiteta vodiča", p:"high"},
+        {text:"Razlika između safetyja i standardne logike (sigurnosni relej, E-Stop)", p:"med"},
+        {text:"Enkoder — inkrementalni vs. apsolutni", p:"med"},
+      ]},
+      { id:"pneumatika", icon:"💨", color:"#E1F5EE", title:"Pneumatika i hidraulika", items:[
+        {text:"Jednoradni vs. dvoradni cilindar — razlika, shema, primjena", p:"high"},
+        {text:"5/2, 5/3 i 3/2 ventil — čitanje oznake, funkcija, spajanje", p:"high"},
+        {text:"Proporcionalni ventil vs. on/off ventil", p:"high"},
+        {text:"Prigušivač protoka — regulacija brzine cilindra", p:"med"},
+        {text:"Vakuumski gripperi — ejektori, generatori vakuuma", p:"med"},
+        {text:"Čitanje pneumatske sheme (ISO simboli)", p:"high"},
+      ]},
+      { id:"motori", icon:"🔄", color:"#E6F1FB", title:"Motori i pogoni", items:[
+        {text:"Asinkroni motor — princip rada, namotaji, klizanje", p:"high"},
+        {text:"Servo motor — razlika od asinkronog, feedback, primjena", p:"high"},
+        {text:"Frekventni pretvarač (VFD) — parametriranje, rampe, greške", p:"high"},
+        {text:"Servo pojačalo (drive) — osnovno parametriranje", p:"med"},
+        {text:"Koračni motor (stepper) — open-loop vs. closed-loop, kad primijeniti", p:"med"},
+        {text:"Motor za higijenske uvjete / ATEX zone — osnovna razlika", p:""},
+      ]},
+      { id:"plc", icon:"🖥️", color:"#EEEDFE", title:"PLC programiranje i debugging", items:[
+        {text:"Ladder Diagram (LD) — čitanje i pisanje osnovnih elemenata", p:"high"},
+        {text:"Function Block Diagram (FBD) — osnove", p:"high"},
+        {text:"Structured Text (ST) — varijable, petlje, uvjeti", p:"med"},
+        {text:"Digitalni i analogni ulazi/izlazi — konfiguracija u PLC-u", p:"high"},
+        {text:"Prepoznavanje greške u PLC kodu — force I/O, online monitoring", p:"high"},
+        {text:"Tag/varijabla — adresiranje, data tipovi (BOOL, INT, REAL, DWORD)", p:"high"},
+        {text:"Timer i counter blokovi — TON, TOF, CTU", p:"high"},
+        {text:"Stanje stroja (State Machine) — implementacija i debugging", p:"med"},
+        {text:"Sustav alarmiranja — generiranje, potvrda (ACK), logging", p:"med"},
+      ]},
+      { id:"komunikacije", icon:"📡", color:"#EAF3DE", title:"Komunikacijski protokoli", items:[
+        {text:"Modbus RTU — RS485, slave/master, registri, testiranje", p:"high"},
+        {text:"Modbus TCP — razlika od RTU, IP adresa, port 502", p:"high"},
+        {text:"PROFINET — osnove, device/controller, IO", p:"high"},
+        {text:"EtherCAT — osnove, device/controller, IO", p:"high"},
+        {text:"EtherNet/IP — usporedba s PROFINET-om", p:"med"},
+        {text:"CANopen / DeviceNet — osnovna primjena", p:""},
+        {text:"OPC-UA — server/client, browsanje tagova", p:"med"},
+        {text:"Serijska komunikacija (RS232, RS485) — kabliranje, paritet, baud rate", p:"high"},
+      ]},
+      { id:"robotika", icon:"🤖", color:"#FBEAF0", title:"Robotika i vision sustavi", items:[
+        {text:"Koordinatni sustavi robota — world, tool, user frame", p:"high"},
+        {text:"Teach pendant — ručno vođenje, snimanje točaka", p:"high"},
+        {text:"I/O komunikacija robot ↔ PLC (digitalna, PROFINET)", p:"high"},
+        {text:"Safety zona robota — collaborative vs. industrial", p:"high"},
+        {text:"Vision sustav — kamera, kalibracija, trigger, rezultat u PLC-u", p:"high"},
+        {text:"Osnove computer visiona — ROI, threshold, pattern matching", p:"med"},
+        {text:"Robot program debugging — alarm log, trace, simulacija", p:"med"},
+      ]},
+      { id:"debugging", icon:"🔍", color:"#FAECE7", title:"Debugging i puštanje u rad", items:[
+        {text:"Sistematski pristup pronalasku greške (Metoda eliminacije)", p:"high"},
+        {text:"Prepoznavanje greške elektroinstalacije iz sheme", p:"high"},
+        {text:"Snimanje i analiza signala osciloskopom ili data loggerom", p:"med"},
+        {text:"Pisanje i čitanje FAT/SAT dokumentacije", p:"med"},
+        {text:"Izmjena parametara na frekventnom pretvaraču nakon puštanja u pogon", p:"med"},
+      ]},
+    ]
+  },
+  konstruktor: {
+    storageKey: 'konstruktor-checklist-v1',
+    label: 'Target lista — strojarski konstruktor',
+    sections: [
+      { id:"proracuni", icon:"📐", color:"#FAEEDA", title:"Proračuni mehaničkih sustava", items:[
+        {text:"Dimenzioniranje sila, momenata i snage", p:"high"},
+        {text:"Proračun vratila, osovina i ležajeva", p:"high"},
+        {text:"Proračun pogona — remenski, lančani, vijčani prijenos", p:"high"},
+        {text:"Analiza opterećenja i sigurnosni faktori", p:"high"},
+        {text:"Osnovno razumijevanje dinamike — ubrzanja, inercija", p:"med"},
+      ]},
+      { id:"elementi", icon:"⚙️", color:"#E1F5EE", title:"Poznavanje elemenata konstrukcija", items:[
+        {text:"Ležajevi — klizni i kotrljajući, odabir i primjena", p:"high"},
+        {text:"Spojke i spojni elementi", p:"high"},
+        {text:"Vijčani spojevi i prednaprezanje", p:"high"},
+        {text:"Vodilice i linearni sustavi", p:"high"},
+        {text:"Reduktori i prijenosnici snage", p:"high"},
+      ]},
+      { id:"materijali", icon:"🧱", color:"#E6F1FB", title:"Poznavanje materijala", items:[
+        {text:"Osnovne skupine materijala — čelici, aluminij, plastika", p:"high"},
+        {text:"Mehanička svojstva — čvrstoća, tvrdoća, žilavost", p:"high"},
+        {text:"Izbor materijala prema primjeni", p:"high"},
+        {text:"Otpornost na trošenje i koroziju", p:"med"},
+      ]},
+      { id:"tolerancije", icon:"📏", color:"#EEEDFE", title:"Poznavanje tolerancija i dosjeda", items:[
+        {text:"ISO sustav tolerancija", p:"high"},
+        {text:"Dosjedi — zazorni, prijelazni, prešani", p:"high"},
+        {text:"Geometrijske tolerancije — ravnost, paralelnost, okomitost", p:"high"},
+        {text:"Utjecaj tolerancija na funkciju i montažu", p:"high"},
+      ]},
+      { id:"toplinska", icon:"🔥", color:"#FCEBEB", title:"Poznavanje toplinske obrade", items:[
+        {text:"Kaljenje, popuštanje, cementiranje, nitriranje — postupci i primjena", p:"high"},
+        {text:"Utjecaj toplinske obrade na tvrdoću i trošenje", p:"high"},
+        {text:"Utjecaj toplinske obrade na dimenzijsku stabilnost", p:"med"},
+        {text:"Primjena u praksi — osovine, zupčanici i slično", p:"med"},
+      ]},
+      { id:"obrada", icon:"🔩", color:"#EAF3DE", title:"Poznavanje strojne obrade", items:[
+        {text:"Osnovni postupci — tokarenje, glodanje, bušenje, brušenje", p:"high"},
+        {text:"Razumijevanje tolerancija izrade i hrapavosti površine", p:"high"},
+        {text:"Odabir tehnologije izrade prema zahtjevu komada", p:"high"},
+        {text:"Dizajn za proizvodnju (DFM — Design for Manufacturing)", p:"high"},
+        {text:"Ograničenja obrade — radijusi alata, pristupačnost, stezanje", p:"med"},
+      ]},
+      { id:"mehanizmi", icon:"🦾", color:"#FBEAF0", title:"Konstrukcija mehanizama i aktuatorskih sustava", items:[
+        {text:"Pneumatski i mehanički aktuatori — odabir i dimenzioniranje", p:"high"},
+        {text:"Prijenos gibanja — linearno i rotacijsko", p:"high"},
+        {text:"Vođenje i stabilnost sustava", p:"high"},
+        {text:"Izbjegavanje neželjenih opterećenja (npr. bočna sila na cilindar)", p:"med"},
+      ]},
+      { id:"pogoni", icon:"⚡", color:"#FEF9E1", title:"Integracija pogona", items:[
+        {text:"Osnovno razumijevanje motora — servo vs. asinkroni s mehaničkog aspekta", p:"high"},
+        {text:"Prijenos momenta i odabir spojke / reduktora", p:"high"},
+        {text:"Krutost pogonskog lanca i utjecaj na preciznost", p:"med"},
+      ]},
+      { id:"odrzavanje", icon:"🔧", color:"#E8F3F8", title:"Konstrukcija za funkcionalnost i održavanje", items:[
+        {text:"Pristupačnost komponenti za servis i zamjenu", p:"high"},
+        {text:"Modularnost konstrukcije", p:"med"},
+        {text:"Jednostavnost montaže i demontaže", p:"high"},
+      ]},
+      { id:"ponasanje", icon:"📊", color:"#F0EEE8", title:"Razumijevanje realnog ponašanja sustava", items:[
+        {text:"Trenje i habanje — mehanizmi i posljedice", p:"high"},
+        {text:"Vibracije i rezonancija — prepoznavanje i ublažavanje", p:"high"},
+        {text:"Toplinska dilatacija i kompenzacija", p:"med"},
+        {text:"Utjecaj radnog okruženja (temperatura, vlaga, kontaminacija)", p:"med"},
+      ]},
+    ]
+  }
+};
+
+/* ═══ STATE ═══ */
+const states = { automatizacija: {}, konstruktor: {} };
+Object.keys(datasets).forEach(tab => {
+  datasets[tab].sections.forEach(s =>
+    s.items.forEach((_, i) => states[tab][`${s.id}-${i}`] = false)
+  );
+});
+function saveState(tab) { try { localStorage.setItem(datasets[tab].storageKey, JSON.stringify(states[tab])); } catch(e) {} }
+function loadState(tab) {
+  try {
+    const saved = localStorage.getItem(datasets[tab].storageKey);
+    if (saved) { const p = JSON.parse(saved); Object.keys(p).forEach(k => { if (k in states[tab]) states[tab][k] = p[k]; }); }
+  } catch(e) {}
+}
+
+/* ═══ PROGRESS ═══ */
+function updateProgress(tab) {
+  const st = states[tab];
+  const total = Object.keys(st).length;
+  const done = Object.values(st).filter(Boolean).length;
+  document.getElementById(`main-bar-${tab}`).style.width = `${(done/total)*100}%`;
+  document.getElementById(`main-label-${tab}`).textContent = `${done} / ${total} završeno`;
+  datasets[tab].sections.forEach(s => {
+    const sd = s.items.filter((_,i) => st[`${s.id}-${i}`]).length;
+    const mf = document.getElementById(`mini-${tab}-${s.id}`); if(mf) mf.style.width=`${(sd/s.items.length)*100}%`;
+    const sc = document.getElementById(`cnt-${tab}-${s.id}`); if(sc) sc.textContent=`${sd}/${s.items.length}`;
+  });
+  const btn = document.getElementById(`quiz-btn-${tab}`);
+  if (btn) btn.disabled = done === 0;
+}
+
+/* ═══ RENDER ═══ */
+function render(tab) {
+  const cont = document.getElementById(`sections-${tab}`);
+  datasets[tab].sections.forEach(sec => {
+    const wrap = document.createElement('div'); wrap.className = 'section';
+    const hdr = document.createElement('div'); hdr.className = 'section-header';
+    hdr.innerHTML = `
+      <div class="section-icon" style="background:${sec.color}">${sec.icon}</div>
+      <div class="section-title">${sec.title}</div>
+      <div class="section-meta">
+        <div class="mini-progress"><div class="mini-fill" id="mini-${tab}-${sec.id}"></div></div>
+        <span class="sec-count" id="cnt-${tab}-${sec.id}">0/${sec.items.length}</span>
+      </div>
+      <span class="chevron" id="chev-${tab}-${sec.id}">▶</span>`;
+    hdr.onclick = () => {
+      const it = document.getElementById(`items-${tab}-${sec.id}`);
+      const ch = document.getElementById(`chev-${tab}-${sec.id}`);
+      const open = it.classList.contains('open');
+      it.classList.toggle('open', !open); ch.classList.toggle('open', !open); hdr.classList.toggle('open', !open);
+    };
+    const itemsDiv = document.createElement('div'); itemsDiv.className = 'items'; itemsDiv.id = `items-${tab}-${sec.id}`;
+    sec.items.forEach((item, i) => {
+      const key = `${sec.id}-${i}`;
+      const row = document.createElement('div'); row.className = 'item';
+      const badge = item.p==='high' ? '<span class="badge badge-high">prioritet</span>' : item.p==='med' ? '<span class="badge badge-med">srednje</span>' : '';
+      row.innerHTML = `<div class="checkbox" id="cb-${tab}-${key}"><span class="checkmark">✓</span></div><div class="item-text" id="tx-${tab}-${key}">${item.text}${badge}</div>`;
+      row.onclick = () => {
+        states[tab][key] = !states[tab][key];
+        document.getElementById(`cb-${tab}-${key}`).classList.toggle('checked', states[tab][key]);
+        document.getElementById(`tx-${tab}-${key}`).classList.toggle('checked', states[tab][key]);
+        updateProgress(tab); saveState(tab);
+      };
+      itemsDiv.appendChild(row);
+    });
+    wrap.appendChild(hdr); wrap.appendChild(itemsDiv); cont.appendChild(wrap);
+  });
+  updateProgress(tab);
+}
+
+/* ═══ TAB SWITCHING ═══ */
+function switchMainTab(tab, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('#main-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`panel-${tab}`).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ═══ EMAIL ═══ */
+let activeEmailTab = 'automatizacija';
+function openModal(tab) { activeEmailTab = tab; document.getElementById('modal-overlay').classList.add('open'); setTimeout(()=>document.getElementById('email-input').focus(),100); }
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+document.getElementById('modal-overlay').addEventListener('click', function(e) { if(e.target===this) closeModal(); });
+function buildEmailBody(tab) {
+  const st=states[tab], ds=datasets[tab];
+  const total=Object.keys(st).length, done=Object.values(st).filter(Boolean).length;
+  let body=`${ds.label}\nNapredak: ${done} / ${total} stavki završeno\nDatum: ${new Date().toLocaleDateString('hr-HR')}\n\n`;
+  ds.sections.forEach(sec => {
+    const sd=sec.items.filter((_,i)=>st[`${sec.id}-${i}`]).length;
+    body+=`── ${sec.title} (${sd}/${sec.items.length}) ──\n`;
+    sec.items.forEach((item,i)=>{ body+=`${st[`${sec.id}-${i}`]?'✓':'○'} ${item.text}\n`; });
+    body+='\n';
+  });
+  return body;
+}
+function doSendEmail() {
+  const email=document.getElementById('email-input').value.trim();
+  if(!email){document.getElementById('email-input').focus();return;}
+  const st=states[activeEmailTab], total=Object.keys(st).length, done=Object.values(st).filter(Boolean).length;
+  const subject=encodeURIComponent(`${datasets[activeEmailTab].label} (${done}/${total})`);
+  const body=encodeURIComponent(buildEmailBody(activeEmailTab));
+  window.location.href=`mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}`;
+  closeModal();
+}
+
+/* ═══════════════════════════════════════
+   QUIZ ENGINE
+═══════════════════════════════════════ */
+const TIMER_SEC = 15;
+const CIRC = 2 * Math.PI * 18;
+
+let quizQuestions = [], quizIndex = 0, quizScore = 0;
+let quizTimer = null, quizTimeLeft = TIMER_SEC, quizLocked = false;
+let quizTab = 'automatizacija', categoryResults = {};
+
+function getCheckedItems(tab) {
+  const result = [];
+  datasets[tab].sections.forEach(sec => {
+    sec.items.forEach((item, i) => {
+      if (states[tab][`${sec.id}-${i}`])
+        result.push({ text: item.text, section: sec.title, sectionIcon: sec.icon });
+    });
+  });
+  return result;
+}
+
+async function generateQuestion(item) {
+  const response = await fetch("/api/generate-question", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      text: item.text,
+      section: item.section,
+      sectionIcon: item.sectionIcon
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error("Greška API-a");
+  }
+
+  return await response.json();
+}
+
+async function startQuiz(tab) {
+  quizTab = tab;
+  const items = getCheckedItems(tab);
+  if (items.length === 0) return;
+
+  document.getElementById('view-checklist').classList.remove('active');
+  document.getElementById('view-quiz').classList.add('active');
+  document.getElementById('main-tabs').style.display = 'none';
+  document.getElementById('quiz-loading').style.display = 'block';
+  document.getElementById('quiz-active').style.display = 'none';
+  document.getElementById('quiz-results').style.display = 'none';
+
+  quizQuestions = []; quizIndex = 0; quizScore = 0; categoryResults = {};
+
+  const genEl = document.getElementById('gen-progress');
+  for (let i = 0; i < items.length; i++) {
+    genEl.textContent = `${i} / ${items.length} pitanja generirana…`;
+    try {
+      const q = await generateQuestion(items[i]);
+      quizQuestions.push(q);
+      genEl.textContent = `${i+1} / ${items.length} pitanja generirana…`;
+    } catch(e) { console.error('Failed:', items[i].text, e); }
+  }
+
+  if (quizQuestions.length === 0) {
+    alert('Greška pri generiranju pitanja. Provjeri internetsku vezu.');
+    backToChecklist(); return;
+  }
+
+  quizQuestions.forEach(q => {
+    if (!categoryResults[q.section]) categoryResults[q.section] = { correct:0, total:0 };
+    categoryResults[q.section].total++;
+  });
+
+  document.getElementById('quiz-loading').style.display = 'none';
+  document.getElementById('quiz-active').style.display = 'block';
+  showQuestion();
+}
+
+function showQuestion() {
+  const q = quizQuestions[quizIndex];
+  quizLocked = false;
+  document.getElementById('quiz-counter').textContent = `Pitanje ${quizIndex+1} / ${quizQuestions.length}`;
+  document.getElementById('quiz-score-live').textContent = `${quizScore} točnih`;
+  document.getElementById('quiz-topic').textContent = `${q.sectionIcon} ${q.section}`;
+  document.getElementById('quiz-question').textContent = q.question;
+
+  const optEl = document.getElementById('quiz-options');
+  optEl.innerHTML = '';
+  ['A','B','C','D'].forEach((letter, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'quiz-option';
+    btn.innerHTML = `<span class="opt-letter">${letter}</span>${q.options[i]}`;
+    btn.onclick = () => selectAnswer(i);
+    optEl.appendChild(btn);
+  });
+
+  document.getElementById('quiz-explanation').className = 'quiz-explanation';
+  document.getElementById('quiz-explanation').innerHTML = '';
+  document.getElementById('quiz-next').className = 'quiz-next';
+  startTimer();
+}
+
+function startTimer() {
+  clearInterval(quizTimer);
+  quizTimeLeft = TIMER_SEC;
+  updateTimerUI(quizTimeLeft);
+  quizTimer = setInterval(() => {
+    quizTimeLeft--;
+    updateTimerUI(quizTimeLeft);
+    if (quizTimeLeft <= 0) { clearInterval(quizTimer); timeOut(); }
+  }, 1000);
+}
+
+function updateTimerUI(t) {
+  const ring = document.getElementById('timer-ring');
+  const txt = document.getElementById('timer-text');
+  ring.style.strokeDashoffset = CIRC * (1 - t/TIMER_SEC);
+  ring.classList.toggle('urgent', t <= 5);
+  txt.textContent = t;
+  txt.style.color = t <= 5 ? '#E05A5A' : '#1a1a1a';
+}
+
+function timeOut() {
+  quizLocked = true;
+  document.body.classList.add('timeout-flash');
+  setTimeout(() => document.body.classList.remove('timeout-flash'), 400);
+  revealAnswer(-1);
+}
+
+function selectAnswer(idx) {
+  if (quizLocked) return;
+  quizLocked = true;
+  clearInterval(quizTimer);
+  revealAnswer(idx);
+}
+
+function revealAnswer(selected) {
+  const q = quizQuestions[quizIndex];
+  const opts = document.querySelectorAll('.quiz-option');
+  opts.forEach(o => o.classList.add('locked'));
+  const correct = selected === q.correct;
+  if (correct) { quizScore++; categoryResults[q.section].correct++; opts[selected].classList.add('correct'); }
+  else { if (selected >= 0) opts[selected].classList.add('wrong'); opts[q.correct].classList.add('reveal-correct'); }
+  const expEl = document.getElementById('quiz-explanation');
+  expEl.innerHTML = `<strong>${correct ? '✓ Točno!' : selected===-1 ? '⏱ Vrijeme isteklo!' : '✗ Netočno.'}</strong> ${q.explanation}`;
+  expEl.className = 'quiz-explanation show';
+  const nextEl = document.getElementById('quiz-next');
+  nextEl.textContent = quizIndex < quizQuestions.length-1 ? 'Sljedeće pitanje →' : 'Prikaži rezultate';
+  nextEl.className = 'quiz-next show';
+}
+
+function nextQuestion() {
+  quizIndex++;
+  if (quizIndex >= quizQuestions.length) showResults(); else showQuestion();
+}
+
+function showResults() {
+  clearInterval(quizTimer);
+  document.getElementById('quiz-active').style.display = 'none';
+  document.getElementById('quiz-results').style.display = 'block';
+  const total = quizQuestions.length, pct = Math.round((quizScore/total)*100);
+  document.getElementById('score-pct').textContent = `${pct}%`;
+  document.getElementById('score-fraction').textContent = `${quizScore}/${total}`;
+  const ring = document.getElementById('score-ring-fill');
+  ring.classList.toggle('fail', pct < 50);
+  setTimeout(() => { ring.style.strokeDashoffset = 251*(1-pct/100); }, 100);
+  let title, sub;
+  if (pct===100){title='🏆 Savršeno!';sub='Odlično vladaš svim temama.';}
+  else if(pct>=80){title='🎯 Odličan rezultat!';sub='Vrlo dobro vladaš temama.';}
+  else if(pct>=60){title='👍 Solidno!';sub='Ima još prostora za napredak.';}
+  else if(pct>=40){title='📚 Ima za učiti';sub='Preporučamo ponavljanje slabijih tema.';}
+  else{title='🔄 Ponovi gradivo';sub='Fokusiraj se na označene teme.';}
+  document.getElementById('results-title').textContent = title;
+  document.getElementById('results-sub').textContent = sub;
+  const bdEl = document.getElementById('breakdown');
+  bdEl.innerHTML = '<div class="breakdown-title">Rezultati po kategorijama</div>';
+  Object.entries(categoryResults).forEach(([sec, r]) => {
+    const p = r.total > 0 ? Math.round((r.correct/r.total)*100) : 0;
+    const color = p>=70 ? '#1D9E75' : p>=40 ? '#E08A1D' : '#E05A5A';
+    const row = document.createElement('div'); row.className = 'breakdown-row';
+    row.innerHTML = `<div class="breakdown-label" title="${sec}">${sec}</div><div class="breakdown-bar-bg"><div class="breakdown-bar-fill" style="width:0%;background:${color}" data-pct="${p}"></div></div><div class="breakdown-count">${r.correct}/${r.total}</div>`;
+    bdEl.appendChild(row);
+  });
+  setTimeout(() => { document.querySelectorAll('.breakdown-bar-fill').forEach(el => { el.style.width = el.dataset.pct+'%'; }); }, 150);
+}
+
+function retryQuiz() {
+  document.getElementById('quiz-results').style.display = 'none';
+  quizIndex = 0; quizScore = 0;
+  Object.keys(categoryResults).forEach(k => { categoryResults[k].correct = 0; });
+  quizQuestions.sort(() => Math.random()-0.5);
+  document.getElementById('quiz-active').style.display = 'block';
+  showQuestion();
+}
+
+function backToChecklist() {
+  clearInterval(quizTimer);
+  document.getElementById('view-quiz').classList.remove('active');
+  document.getElementById('view-checklist').classList.add('active');
+  document.getElementById('main-tabs').style.display = 'flex';
+  document.getElementById('quiz-active').style.display = 'none';
+  document.getElementById('quiz-results').style.display = 'none';
+  document.getElementById('quiz-loading').style.display = 'none';
+}
+
+/* ═══ INIT ═══ */
+['automatizacija','konstruktor'].forEach(tab => {
+  loadState(tab); render(tab);
+  Object.keys(states[tab]).forEach(key => {
+    if (states[tab][key]) {
+      const cb=document.getElementById(`cb-${tab}-${key}`); if(cb) cb.classList.add('checked');
+      const tx=document.getElementById(`tx-${tab}-${key}`); if(tx) tx.classList.add('checked');
+    }
+  });
+  updateProgress(tab);
+});
+</script>
+</body>
+</html>
