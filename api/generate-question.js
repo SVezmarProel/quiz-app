@@ -27,11 +27,21 @@ Format:
     "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
     "Content-Type": "application/json"
   },
-  body: JSON.stringify({
-    model: "llama-3.1-8b-instant",
-    messages: [{ role: "user", content: prompt }]
-  })
-});
+ body: JSON.stringify({
+  model: "llama-3.1-8b-instant",
+  messages: [
+    {
+      role: "system",
+      content: "Odgovaraš isključivo validnim JSON-om. Bez markdowna, bez objašnjenja izvan JSON-a."
+    },
+    {
+      role: "user",
+      content: prompt
+    }
+  ],
+  temperature: 0.2,
+  response_format: { type: "json_object" }
+})
 
     const data = await aiRes.json();
 
